@@ -19,3 +19,15 @@ We'll be analyzing the GBS data from 3 regions (EU, NE, PNW) starting today with
 -   In the fastq file, the 1st line is the sequence itself, second line is Q scores
 
 -   Q scores range from 0-40+, letters like I and G mean high confidence in that base pair (mistakes every 1,000-10,000 bp)
+
+9/17/24
+
+Today we looked at how genetic data is filtered
+
+-   used a package called SNPfiltR to filter based on depth and align genetic data with metadata (populations and individual ID)
+
+-   We used heatmap.bp to visualize at several steps
+
+-   we filtered based on thresholds for individual and SNP missingness
+
+-   we filtered for only biallelic data and wrote the final filtered data set into its own file so we can pickup where we left off.
