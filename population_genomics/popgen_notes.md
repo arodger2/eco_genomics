@@ -31,3 +31,7 @@ Today we looked at how genetic data is filtered
 -   we filtered based on thresholds for individual and SNP missingness
 
 -   we filtered for only biallelic data and wrote the final filtered data set into its own file so we can pickup where we left off.
+
+9/19
+
+Today we worked on getting data into the right format to measure diversity and make a manhattan plot. We used the filtered data and made sure it had the same number of data points as the meta data. We also renamed chromosomes to make sure manhattan plot would recognize.
