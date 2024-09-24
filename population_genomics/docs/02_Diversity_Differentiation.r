@@ -55,6 +55,47 @@ manhattan(vcf.div.MHplot,
           col=c("blue4","orange3"),
           logp=F,
           ylab="Fst among regions",
-          suggestiveline = quantile(vcf.div.MHplot$Gst, 0.999))
+          suggestiveline = quantile(vcf.div.MHplot$Gst, 0.50))
+# Interpreting manhattan plot- these individuals generally share a large amount of SNPs
+# Write out file
+
+write.csv(vcf.div.MHplot, "~/Projects/eco_genomics/population_genomics/outputs/Genetic_Diff_byRegion.csv",
+          quote=F,
+          row.names=F)
+
+# Looking at Hs values
+names(vcf.div.MHplot)
+# Hs values are stored in columns 4:9
+
+# Density plot
+
+vcf.div.MHplot %>% 
+  as_tibble() %>%
+  pivot_longer(c(4:9)) %>% 
+  ggplot(aes(x=value, fill=name))+
+  geom_histogram(position="identity",alpha=0.5, bins=50)+
+  labs(title="Genome-wide expected heterozygosity (Hs)", 
+       fill="Regions",
+       x="Gene diversity within regions",
+       y="Counts of SNPs")
+# value means generic value, coloring by column name
+# alpha is transparency
+
+# Saving the graph
+ggsave("Histogram_GenomeDiversity_byRegion.pdf",
+       path="~/Projects/eco_genomics/population_genomics/figures/")
+
+# Making a summary table showing averages of the data we just plotted
+vcf.div.MHplot %>% 
+  as_tibble() %>%
+  pivot_longer(c(4:9)) %>% 
+  group_by(name) %>% 
+  filter(value!=0) %>% 
+  summarise(avgHs=mean(value), StdDev_Hs=sd(value), N_Hs=n())
+
+# In introduced areas, there's more opportunities for mixing?
+
+
+
  
 
