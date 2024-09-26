@@ -35,3 +35,9 @@ Today we looked at how genetic data is filtered
 9/19
 
 Today we worked on getting data into the right format to measure diversity and make a manhattan plot. We used the filtered data and made sure it had the same number of data points as the meta data. We also renamed chromosomes to make sure manhattan plot would recognize.
+
+9/26/24
+
+Today we plotted the PCA from last class using ggplot instead,
+
+We played around with looking at different PCs and plotting eigen values
