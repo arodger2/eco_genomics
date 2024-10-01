@@ -51,21 +51,21 @@ pcadapt.MHplot <- pcadapt.MHplot %>%
 
 pcadapt.MHplot$V2 = as.numeric(pcadapt.MHplot$V2)
 pcadapt.MHplot$POS = as.numeric(pcadapt.MHplot$POS)
-pcadapt.MHplot$pPC1 = as.numeric(pcadapt.MHplot$pPC1)
-pcadapt.MHplot$pPC2 = as.numeric(pcadapt.MHplot$pPC2)
+pcadapt.MHplot$pPC1 = as.numeric(pcadapt.MHplot[,4])
+pcadapt.MHplot$pPC2 = as.numeric(pcadapt.MHplot[,5])
 
 pcadapt.MHplot <- pcadapt.MHplot %>% 
-  drop_na(1)
+  drop_na(pPC1)
 
 manhattan(pcadapt.MHplot,
           chr="V2",
-          pb="POS",
-          p="pPC2",
+          bp="POS",
+          p="pPC1",
           col=c("blue4","orange3"),
           logP=T,
           ylab="-log 10 p-value",
           genomewideline = F,
-          main="PCAdapt genome scan for selection (PC2)")
+          main="PCAdapt genome scan for selection (PC1)")
 
 View(pcadapt.MHplot %>% 
        filter(pPC1<quantile(pcadapt.MHplot$pPC1, 0.001)) %>%
