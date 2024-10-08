@@ -4,7 +4,6 @@ setwd("/gpfs1/cl/pbio3990/PopulationGenomics/")
 list.files("variants/")
 
 vcf <- read.vcfR("variants/Centaurea_filtered.vcf.gz")
-head(vcf)
 
 # Fixed section is all SNPs (alt compared to reference genome)
 
@@ -80,8 +79,5 @@ heatmap.bp(DP2, rlabels = F, clabels = F)
 
 write.vcf(vcf.filt.ind.SNPMiss, 
           "~/Projects/eco_genomics/population_genomics/outputs/vcf.filtered.vcf.gz")
-
-# Low frequency alleles
-
 
 

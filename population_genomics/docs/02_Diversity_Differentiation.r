@@ -90,7 +90,7 @@ vcf.div.MHplot %>%
   as_tibble() %>%
   pivot_longer(c(4:9)) %>% 
   group_by(name) %>% 
-  filter(value!=0) %>% 
+  filter(value!=0 & value<0.5) %>% 
   summarise(avgHs=mean(value), StdDev_Hs=sd(value), N_Hs=n())
 
 # In introduced areas, there's more opportunities for mixing?
