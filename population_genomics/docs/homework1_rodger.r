@@ -1,22 +1,22 @@
+# Loading in library
+################# 
 library(vcfR)
-
 setwd("/gpfs1/cl/pbio3990/PopulationGenomics/")
+
+
+# Loading files
+###############
 vcf <- read.vcfR("variants/Centaurea_filtered.vcf.gz")
-
-# Fixed section is all SNPs (alt compared to reference genome)
 dna <- ape::read.dna("reference/GCA_030169165.1_ASM3016916v1_genomic.fa.gz", format="fasta")
-
-# Annotation file
 gff <- read.table("reference/GCA_030169165.1_ASM3016916v1_genomic_genes.gff.gz", sep="\t", quote="")
 
-#
-DP <- extract.gt(vcf, element = "DP", as.numeric = T)
 
 # Starting filtering
+#####
+DP <- extract.gt(vcf, element = "DP", as.numeric = T)
 DP[DP==0] <- NA
 quantile(DP, na.rm = T)
 
-# Begin filtering by depth
 library(SNPfiltR)
 
 # filter low depths
@@ -25,27 +25,28 @@ vcf.filt <- hard_filter(vcf, depth= 3)
 # filter high depths (2x the mean)
 vcf.filt <- max_depth(vcf.filt, maxdepth = 60)
 
-meta <- read.csv("metadata/meta4vcf.csv", header=T)
+# load in metadata (individual IDs, sites, populations, etc.)
+meta <- read.csv("metadata/meta4vcf.csv", header=T) 
+#meta begins as 629 observations of 8 variables
 
-# subsetting meta
-meta2 <- meta[,c(1,4)]
+# to take only the columns "id" and "pop"...
+# meta2 <- meta[,c(1,4)]
+# names(meta2) <- c("id","pop")
+# meta2$id =as.factor(meta2$id)
+# meta2$pop =as.factor(meta2$pop)
 
-names(meta2) <- c("id","pop")
-meta2$id =as.factor(meta2$id)
-meta2$pop =as.factor(meta2$pop)
-
-# Looking at individual missingness, and setting cutoff
+# Setting cutoff for individual-wise missing-ness
 sixtyfive <- missing_by_sample(vcf.filt,
                             popmap = meta2,
                             cutoff=0.65)
 eightyfive <-missing_by_sample(vcf.filt,
                                 popmap = meta2,
                                 cutoff=0.85)
-
+# Filtering out any alleles which aren't biallelic
 sixtyfive.filt <- filter_biallelic(sixtyfive)
 eightyfive.filt <- filter_biallelic(eightyfive)
 
-# sets the minimum number of times to see SNP
+# sets the minimum number of times to see SNP to 1
 sixtyfive.filt <- min_mac(sixtyfive.filt, min.mac = 1)
 eightyfive.filt <- min_mac(eightyfive.filt, min.mac = 1)
 
@@ -53,14 +54,14 @@ eightyfive.filt <- min_mac(eightyfive.filt, min.mac = 1)
 sixtyfive.filt.SNPMiss <- missing_by_snp(sixtyfive.filt, cutoff= 0.5)
 eightyfive.filt.SNPMiss <- missing_by_snp(eightyfive.filt, cutoff= 0.5)
 
+# Write out the vcfs
 write.vcf(sixtyfive.filt.SNPMiss, 
           "~/Projects/eco_genomics/population_genomics/outputs/sixtyfive.filt.SNPMiss.gz")
-
 write.vcf(eightyfive.filt.SNPMiss, 
           "~/Projects/eco_genomics/population_genomics/outputs/eightyfive.filt.SNPMiss.gz")
 
-#### Script 2
-
+# Script 2
+######
 library(vcfR)
 library(tidyverse)
 library(qqman)
@@ -69,22 +70,15 @@ X11.options(type="cairo")
 
 ##### begining with code for 65% filter
 sixtyfive.vcf <-read.vcfR("~/Projects/eco_genomics/population_genomics/outputs/sixtyfive.filt.SNPMiss.gz")
-
-meta265 <-meta2[meta2$id %in% colnames(sixtyfive.vcf@gt[,-1]),]
-
-# calculate diversity stats using the genetic_diff fxn in vcfR
+meta65 <-meta[meta$id %in% colnames(sixtyfive.vcf@gt[,-1]),]
 vcf65.div <- genetic_diff(sixtyfive.vcf,
-                        pops=as.factor(meta265$region),
+                        pops=as.factor(meta65$region),
                         method="nei")
-# Could also be interesting to look at other groupings than region?
 
-# Taking just first 8 entries (8 main chromsomes)
+# Assigning SNPs to chromosomes
 chr.main <- unique(vcf65.div$CHROM) [1:8]
 
-# Tell it which chromosome numbers
 chrnum <- as.data.frame(cbind(chr.main, seq(1, 8, 1)))
-
-# merge diversity stats with chrnum- assign to chromosome numbers
 
 vcf65.div.MHplot <- left_join(chrnum, vcf65.div, join_by(chr.main==CHROM))
 vcf65.div.MHplot <- vcf65.div.MHplot %>%
@@ -105,33 +99,23 @@ manhattan(vcf65.div.MHplot,
           ylab="Fst among regions",
           main="Diversity among regions (65% missingness filter)",
           suggestiveline = quantile(vcf65.div.MHplot$Gst, 0.50))
-# Interpreting manhattan plot- these individuals generally share a large amount of SNPs
-# Write out file
-
-write.csv(vcf65.div.MHplot, "~/Projects/eco_genomics/population_genomics/outputs/Genetic_Diff_byRegion65.csv",
-          quote=F,
-          row.names=F)
+# These individuals generally share a large amount of SNPs
 
 ##### Repeating for 85% missingness
 eightyfive.vcf <-read.vcfR("~/Projects/eco_genomics/population_genomics/outputs/eightyfive.filt.SNPMiss.gz")
 
-meta285 <-meta[meta$id %in% colnames(eightyfive.vcf@gt[,-1]),]
+meta85 <-meta[meta$id %in% colnames(eightyfive.vcf@gt[,-1]),]
 
 # calculate diversity stats using the genetic_diff fxn in vcfR
 vcf85.div <- genetic_diff(eightyfive.vcf,
-                          pops=as.factor(meta285$region),
+                          pops=as.factor(meta85$region),
                           method="nei")
-# Could also be interesting to look at other groupings than region?
 
-# Taking just first 8 entries (8 main chromsomes)
+# Assigning to chromosomes
 chr.main <- unique(vcf85.div$CHROM) [1:8]
-
-# Tell it which chromosome numbers
 chrnum <- as.data.frame(cbind(chr.main, seq(1, 8, 1)))
-
-# merge diversity stats with chrnum- assign to chromosome numbers
-
 vcf85.div.MHplot <- left_join(chrnum, vcf85.div, join_by(chr.main==CHROM))
+
 vcf85.div.MHplot <- vcf85.div.MHplot %>%
   filter(Gst>0) %>% 
   mutate(SNP=paste0(chr.main, "_", POS))
@@ -150,14 +134,6 @@ manhattan(vcf85.div.MHplot,
           ylab="Fst among regions",
           main="Diversity among regions (85% missingness filter)",
           suggestiveline = quantile(vcf85.div.MHplot$Gst, 0.50))
-# Interpreting manhattan plot- these individuals generally share a large amount of SNPs
-# Write out file
-
-write.csv(vcf85.div.MHplot, "~/Projects/eco_genomics/population_genomics/outputs/Genetic_Diff_byRegion85.csv",
-          quote=F,
-          row.names=F)
-
-# Somewhat different, but may not be the most valuable graphs^
 
 # Looking at Hs values
 # Hs values are stored in columns 4:9
@@ -184,14 +160,6 @@ vcf85.div.MHplot %>%
        x="Gene diversity within regions",
        y="Counts of SNPs")
 
-# To me these plots look pretty similar in terms of trends
-# value means generic value, coloring by column name
-# alpha is transparency
-
-# Saving the graph
-# ggsave("Histogram_GenomeDiversity_byRegion.pdf",
-       # path="~/Projects/eco_genomics/population_genomics/figures/")
-
 # Making a summary table showing averages of the data we just plotted
 vcf65.div.MHplot %>% 
   as_tibble() %>%
@@ -213,58 +181,125 @@ setwd("~/Projects/eco_genomics/population_genomics/")
 vcf65 <- read.vcfR("outputs/sixtyfive.filt.SNPMiss.gz")
 vcf85 <- read.vcfR("outputs/eightyfive.filt.SNPMiss.gz")
 
+# Thinning SNPs which are closer than 500 bp apart because of PCA's assumption of independence
 vcf65.thin <-distance_thin(vcf65, min.distance = 500)
 vcf85.thin <- distance_thin(vcf85, min.distance = 500)
 
-# Again, make sure dimensions of meta matches our new vcf dimensions
-meta265 <- meta[meta$id %in% colnames(vcf65@gt[, -1]) , ]
-meta285 <- meta[meta$id %in% colnames(vcf85@gt[, -1]) , ]
+# Make sure dimensions of meta matches our new vcf dimensions
+meta65 <- meta[meta$id %in% colnames(vcf65.thin@gt[, -1]) , ]
+meta85 <- meta[meta$id %in% colnames(vcf85.thin@gt[, -1]) , ]
 
 write.vcf(vcf65.thin, "outputs/vcf65_final.filtered.thinned.vcf.gz")
 write.vcf(vcf85.thin, "outputs/vcf85_final.filtered.thinned.vcf.gz")
 
-# We have to uncompress this file for LEA
-# this will make too big of a file for github- hide outside of repo
-# system means its as if you're on command line in BASH
 system("gunzip -c ~/Projects/eco_genomics/population_genomics/outputs/vcf65_final.filtered.thinned.vcf.gz > ~/vcf65_final.filtered.thinned.vcf")
 
 # PCA with thinned data
-# Call LEA then PCA to get correct pca function
-
 geno65 <- vcf2geno(input.file = "/gpfs1/home/a/r/arodger/vcf65_final.filtered.thinned.vcf",
                  output.file = "outputs/vcf65_final.filtered.thinned.vcf.geno")
 CentPCA65 <- LEA::pca("outputs/vcf65_final.filtered.thinned.vcf.geno", scale=TRUE)
-
-# To reload a previous PCA
-CentPCA65 <- load.pcaProject("vcf65_final.filtered.thinned.vcf.pcaProject")
+# Calculating percentage of variation explained by each PC
+CentPCA65$eigenvalues[1]/sum(CentPCA65$eigenvalues)
+CentPCA65$eigenvalues[2]/sum(CentPCA65$eigenvalues)
 
 ggplot(as.data.frame(CentPCA65$projections),
-       aes(x=V1, y=V2, color=meta265$region, shape=meta265$continent)) +
+       aes(x=V1, y=V2, color=meta65$region, shape=meta65$continent)) +
   geom_point() +
-  labs(title = "Centaurea genetic PCA (65% missingness)", x="PC1",y="PC2", color="Region", shape="Continent")
-
+  labs(title = "Centaurea genetic PCA (65% missingness)", x="PC1 (2.4%)",y="PC2 (1.1%)", color="Region", shape="Continent")
 ggsave("figures/CentPCA65_PC1vPC2.pdf")
+
 # Repeat with 85% missingness
 system("gunzip -c ~/Projects/eco_genomics/population_genomics/outputs/vcf85_final.filtered.thinned.vcf.gz > ~/vcf85_final.filtered.thinned.vcf")
-
 geno85 <- vcf2geno(input.file = "/gpfs1/home/a/r/arodger/vcf85_final.filtered.thinned.vcf",
                    output.file = "outputs/vcf85_final.filtered.thinned.vcf.geno")
 CentPCA85 <- LEA::pca("outputs/vcf85_final.filtered.thinned.vcf.geno", scale=TRUE)
-
-# To reload a previous PCA
-CentPCA85 <- load.pcaProject("vcf85_final.filtered.thinned.vcf.pcaProject")
+CentPCA85$eigenvalues[1]/sum(CentPCA85$eigenvalues)
+CentPCA85$eigenvalues[2]/sum(CentPCA85$eigenvalues)
 
 ggplot(as.data.frame(CentPCA85$projections),
-       aes(x=V1, y=V2, color=meta285$region, shape=meta285$continent)) +
+       aes(x=V1, y=V2, color=meta85$region, shape=meta85$continent)) +
   geom_point() +
-  labs(title = "Centaurea genetic PCA (85% missingness)", x="PC1",y="PC2", color="Region", shape="Continent")
-
+  labs(title = "Centaurea genetic PCA (85% missingness)", x="PC1 (2.2%)",y="PC2(1.0%)", color="Region", shape="Continent")
 ggsave("figures/CentPCA85_PC1vPC2.pdf")
 
 ### Selection
-
-library(tidyverse)
-library(ggplot2)
-library(vcfR)
-library(qqman)
 library(pcadapt)
+vcf65 <- read.pcadapt("~/Projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.vcf65.gz",
+                    type="vcf")
+pcadapt.pca65 <- pcadapt(vcf65,
+                       K=2,
+                       method="componentwise",
+                       min.maf=0.01,
+                       LD.clumping = list(size=500, thr=0.2))
+
+vcfR65 <- read.vcfR("~/Projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.vcf65.gz")
+vcfR.fix65 <- as.data.frame(vcfR65@fix[,1:2])
+chr.main65 <- unique(vcfR.fix65$CHROM)[1:8]
+chrnum65 <- as.data.frame(cbind(chr.main65, seq (1,8,1)))
+
+# Getting p values
+Pval65 <- pcadapt.pca65$pvalues
+pcadapt.MHplot65 <- cbind(vcfR.fix65, Pval65)
+pcadapt.MHplot65 <- left_join(chrnum65, pcadapt.MHplot65, join_by(chr.main65==CHROM))
+pcadapt.MHplot65 <- pcadapt.MHplot65 %>%
+  mutate(SNP=paste0(chr.main65,"_",POS))
+
+pcadapt.MHplot65$V2 = as.numeric(pcadapt.MHplot65$V2)
+pcadapt.MHplot65$POS = as.numeric(pcadapt.MHplot65$POS)
+
+pcadapt.MHplot65$pPC1 = as.numeric(pcadapt.MHplot65[,4])
+pcadapt.MHplot65$pPC2 = as.numeric(pcadapt.MHplot65[,5])
+
+pcadapt.MHplot65 <- pcadapt.MHplot65 %>% 
+  drop_na(pPC1)
+
+manhattan(pcadapt.MHplot65,
+          chr="V2",
+          bp="POS",
+          p="pPC1",
+          col=c("blue4","orange3"),
+          logP=T,
+          ylab="-log 10 p-value",
+          genomewideline = F,
+          main="PCAdapt genome scan for selection (PC1)- 65%")
+
+
+# Repeating for 85%
+vcf85 <- read.pcadapt("~/Projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.vcf85.gz",
+                      type="vcf")
+pcadapt.pca85 <- pcadapt(vcf85,
+                         K=2,
+                         method="componentwise",
+                         min.maf=0.01,
+                         LD.clumping = list(size=500, thr=0.2))
+
+vcfR85 <- read.vcfR("~/Projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.vcf85.gz")
+vcfR.fix85 <- as.data.frame(vcfR85@fix[,1:2])
+chr.main85 <- unique(vcfR.fix85$CHROM)[1:8]
+chrnum85 <- as.data.frame(cbind(chr.main85, seq (1,8,1)))
+
+# Getting p values
+Pval85 <- pcadapt.pca85$pvalues
+pcadapt.MHplot85 <- cbind(vcfR.fix85, Pval85)
+pcadapt.MHplot85 <- left_join(chrnum85, pcadapt.MHplot85, join_by(chr.main85==CHROM))
+pcadapt.MHplot85 <- pcadapt.MHplot85 %>%
+  mutate(SNP=paste0(chr.main85,"_",POS))
+
+pcadapt.MHplot85$V2 = as.numeric(pcadapt.MHplot85$V2)
+pcadapt.MHplot85$POS = as.numeric(pcadapt.MHplot85$POS)
+
+pcadapt.MHplot85$pPC1 = as.numeric(pcadapt.MHplot85[,4])
+pcadapt.MHplot85$pPC2 = as.numeric(pcadapt.MHplot85[,5])
+
+pcadapt.MHplot85 <- pcadapt.MHplot85 %>% 
+  drop_na(pPC1)
+
+manhattan(pcadapt.MHplot85,
+          chr="V2",
+          bp="POS",
+          p="pPC1",
+          col=c("blue4","orange3"),
+          logP=T,
+          ylab="-log 10 p-value",
+          genomewideline = F,
+          main="PCAdapt genome scan for selection (PC1)- 85%")
