@@ -4,11 +4,9 @@ setwd("/gpfs1/cl/pbio3990/PopulationGenomics/")
 vcf <- read.vcfR("variants/Centaurea_filtered.vcf.gz")
 
 # Fixed section is all SNPs (alt compared to reference genome)
-
 dna <- ape::read.dna("reference/GCA_030169165.1_ASM3016916v1_genomic.fa.gz", format="fasta")
 
 # Annotation file
-
 gff <- read.table("reference/GCA_030169165.1_ASM3016916v1_genomic_genes.gff.gz", sep="\t", quote="")
 
 #
@@ -54,17 +52,6 @@ eightyfive.filt <- min_mac(eightyfive.filt, min.mac = 1)
 # Snp-wise missing alleles
 sixtyfive.filt.SNPMiss <- missing_by_snp(sixtyfive.filt, cutoff= 0.5)
 eightyfive.filt.SNPMiss <- missing_by_snp(eightyfive.filt, cutoff= 0.5)
-
-#DP2sixtyfive <-extract.gt(sixtyfive.filt.SNPMiss,
-                 #element="DP",
-                 #as.numeric = T)
-
-#DP2eightyfive <-extract.gt(eightyfive.filt.SNPMiss,
-                          #element="DP",
-                          #as.numeric = T)
-
-#heatmap.bp(DP2sixtyfive, rlabels = F, clabels = F)
-#heatmap.bp(DP2eightyfive, rlabels = F, clabels =F)
 
 write.vcf(sixtyfive.filt.SNPMiss, 
           "~/Projects/eco_genomics/population_genomics/outputs/sixtyfive.filt.SNPMiss.gz")
@@ -230,8 +217,8 @@ vcf65.thin <-distance_thin(vcf65, min.distance = 500)
 vcf85.thin <- distance_thin(vcf85, min.distance = 500)
 
 # Again, make sure dimensions of meta matches our new vcf dimensions
-meta265 <- meta265[meta265$id %in% colnames(vcf65@gt[, -1]) , ]
-meta285 <- meta285[meta285$id %in% colnames(vcf85@gt[, -1]) , ]
+meta265 <- meta[meta$id %in% colnames(vcf65@gt[, -1]) , ]
+meta285 <- meta[meta$id %in% colnames(vcf85@gt[, -1]) , ]
 
 write.vcf(vcf65.thin, "outputs/vcf65_final.filtered.thinned.vcf.gz")
 write.vcf(vcf85.thin, "outputs/vcf85_final.filtered.thinned.vcf.gz")
@@ -274,42 +261,10 @@ ggplot(as.data.frame(CentPCA85$projections),
 
 ggsave("figures/CentPCA85_PC1vPC2.pdf")
 
-#### Admixture
-CentAdmix65 <- snmf("outputs/vcf_final.filtered.thinned.vcf65.geno",
-                  K=1:10,
-                  entropy = T,
-                  repetitions = 3,
-                  project = "new")
+### Selection
 
-# par makes a single figure with two plots
-par(mfrow=c(2,1))
-plot(CentAdmix65, col="blue4", main="SNMF") # plotting results of cross validation error
-
-plot(CentPCA65$eigenvalue[1:10], ylab="Eigenvalues",xlab="Number of PCs", col="blue4", main="PCA")
-
-# turning off par
-dev.off()
-
-# Now 85
-CentAdmix85 <- snmf("outputs/vcf85_final.filtered.thinned.vcf.geno",
-                    K=1:10,
-                    entropy = T,
-                    repetitions = 3,
-                    project = "new")
-
-# par makes a single figure with two plots
-par(mfrow=c(2,1))
-plot(CentAdmix85, col="blue4", main="SNMF") # plotting results of cross validation error
-
-plot(CentPCA85$eigenvalue[1:10], ylab="Eigenvalues",xlab="Number of PCs", col="blue4", main="PCA")
-
-# turning off par
-dev.off()
-
-# Making an admixture plot (based on cross entropy), starting with k=5
-myK=5
-
-CE = cross.entropy(CentAdmix65, K=myK)
-best= which.min(CE)
-myKQ = Q(CentAdmix65, K=myK, run=best)
-myKQmeta = cbind(myKQ, meta265)
+library(tidyverse)
+library(ggplot2)
+library(vcfR)
+library(qqman)
+library(pcadapt)
