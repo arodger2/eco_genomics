@@ -1,0 +1,2 @@
+Oct 8th
+- Today we talked about the data set, loaded in data frames, and installed DESeq2
