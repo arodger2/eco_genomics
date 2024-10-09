@@ -181,9 +181,23 @@ setwd("~/Projects/eco_genomics/population_genomics/")
 vcf65 <- read.vcfR("outputs/sixtyfive.filt.SNPMiss.gz")
 vcf85 <- read.vcfR("outputs/eightyfive.filt.SNPMiss.gz")
 
+
 # Thinning SNPs which are closer than 500 bp apart because of PCA's assumption of independence
 vcf65.thin <-distance_thin(vcf65, min.distance = 500)
 vcf85.thin <- distance_thin(vcf85, min.distance = 500)
+
+# Estimating individuals and SNP loci after all filtering
+individuals65 <- ncol(vcf65.thin@gt [, -1])
+Snps65 <- nrow (vcf65.thin@gt)
+
+individuals85 <- ncol(vcf85.thin@gt [, -1])
+Snps85 <- nrow (vcf85.thin@gt)
+
+Estimates <- matrix(c(individuals65, Snps65, individuals85, Snps85), nrow=2, ncol=2) 
+colnames(Estimates) <- c("65% missing data","85% missing data")
+rownames(Estimates) <- c("Individuals","SNPs")
+Estimatestab <- as.table(Estimates)
+
 
 # Make sure dimensions of meta matches our new vcf dimensions
 meta65 <- meta[meta$id %in% colnames(vcf65.thin@gt[, -1]) , ]
