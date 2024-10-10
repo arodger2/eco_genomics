@@ -24,3 +24,5 @@ head(conds)
 
 dds <- DESeqDataSetFromMatrix (countData= countsTableRound, colData=conds,
                               design= ~DevTemp+FinalTemp)
+
+
