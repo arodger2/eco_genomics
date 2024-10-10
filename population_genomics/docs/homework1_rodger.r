@@ -161,19 +161,48 @@ vcf85.div.MHplot %>%
        y="Counts of SNPs")
 
 # Making a summary table showing averages of the data we just plotted
-vcf65.div.MHplot %>% 
+diversitysummary65 <- vcf65.div.MHplot %>% 
   as_tibble() %>%
   pivot_longer(c(4:9)) %>% 
   group_by(name) %>% 
   filter(value!=0 & value<0.5) %>% 
   summarise(avgHs=mean(value), StdDev_Hs=sd(value), N_Hs=n())
 
+lowerlim65=diversitysummary65$avgHs-diversitysummary65$StdDev_Hs
+upperlim65=diversitysummary65$avgHs+diversitysummary65$StdDev_Hs
+
+ggplot(diversitysummary65, aes(x=name, y=avgHs, color=name))+
+  geom_point(size=3)+
+  geom_errorbar(aes(ymin=lowerlim65, ymax=upperlim65))+
+  labs(title="Genome-wide expected heterozygosity (Hs)--65% missingness", 
+       fill="Regions",
+       x="Region",
+       y="Average Expected Heterozygosity")
+
+diversitysummary85 <- vcf85.div.MHplot %>% 
+  as_tibble() %>%
+  pivot_longer(c(4:9)) %>% 
+  group_by(name) %>% 
+  filter(value!=0 & value<0.5) %>% 
+  summarise(avgHs=mean(value), StdDev_Hs=sd(value), N_Hs=n())
+
+lowerlim85=diversitysummary85$avgHs-diversitysummary85$StdDev_Hs
+upperlim85=diversitysummary85$avgHs+diversitysummary85$StdDev_Hs
+
+ggplot(diversitysummary85, aes(x=name, y=avgHs, color=name))+
+  geom_point(size=3)+
+  geom_errorbar(aes(ymin=lowerlim85, ymax=upperlim85))+
+  labs(title="Genome-wide expected heterozygosity (Hs)--85% missingness", 
+       fill="Regions",
+       x="Region",
+       y="Average Expected Heterozygosity")
 vcf85.div.MHplot %>% 
   as_tibble() %>%
   pivot_longer(c(4:9)) %>% 
   group_by(name) %>% 
   filter(value!=0 & value<0.5) %>% 
   summarise(avgHs=mean(value), StdDev_Hs=sd(value), N_Hs=n())
+  
 
 ##### Script 3
 library(LEA)
@@ -197,7 +226,7 @@ Estimates <- matrix(c(individuals65, Snps65, individuals85, Snps85), nrow=2, nco
 colnames(Estimates) <- c("65% missing data","85% missing data")
 rownames(Estimates) <- c("Individuals","SNPs")
 Estimatestab <- as.table(Estimates)
-
+Estimatestab
 
 # Make sure dimensions of meta matches our new vcf dimensions
 meta65 <- meta[meta$id %in% colnames(vcf65.thin@gt[, -1]) , ]
