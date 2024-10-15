@@ -3,3 +3,8 @@ Oct 8th
 
 Oct 10th
 - Today we used the thermal stress experiment data to make a PCA
+
+Oct 15th
+- today we looked at differential expression between developmental temperatures
+- we used an MA plot and heatmap to look at relative expression (down regulation and upregulation)
+- we looked at how to extract one comparison from the DEseq analysis, and how to interpret expression (importance of knowing which treatment is treated as the "control")
