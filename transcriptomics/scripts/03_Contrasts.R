@@ -88,3 +88,121 @@ length(intersect(degs_D18_A33_D22_A33, degs_D18_BASE_D22_BASE)) #44
 length(intersect(degs_D18_BASE_D22_BASE, intersect(degs_D18_A28_D22_A28, degs_D18_A33_D22_A33)))
 #23
 
+# Calculate the number of unique genes in each portion of the euler plot
+
+1935-107-44+23 #1807 (unique) differentially expressed between 18 and 22 at base conditions
+
+296-107-29+23 #183 genes diff expressed unique at A28
+
+78-44-29+23 #28 genes differentially expressed uniquely at A33
+
+# Degree of overlap between
+107-23 #84 DEGs overlapping in base and A28
+44-23 #21 genes unique to base and A33
+29-23 #6 unique to A28 and A33
+
+# Ready to plot!
+myEuler <-euler(c("BASE"=1807, "A28"=183, "A33"=28, "BASE&A28"=84, 
+                  "BASE&A33"=21, "A28&A33"=6, "BASE&A28&A33"=23))
+
+plot(myEuler, lty=1:3, quantities=TRUE)
+
+##################
+#
+# Make a scatter plot of responses to A28 (Then A33) when copepods develop at 18 vs 22
+#
+##################
+
+
+# contrast D18_A28 vs BASE
+res_D18_BASEvsA28 <- as.data.frame(results(dds, contrast=c("group","D18BASE","D18A28"), alpha=0.05))
+
+# Contrast D22_A28 vs BASE
+res_D22_BASEvsA28 <- as.data.frame(results(dds, contrast=c("group","D22BASE","D22A28"), alpha=0.05))
+
+# Merge these data frames
+res_df28 <- merge(res_D18_BASEvsA28, res_D22_BASEvsA28, by="row.names", suffixes=c(".18",".22"))
+
+rownames(res_df28) <- res_df28$Row.names
+
+# keep all rows get rid of first column
+res_df28 <- res_df28[,-1]
+
+library(dplyr)
+library(tidyr)
+
+# Define our color mapping logic with the mutate function (showing up and down regulated genes in each conditrin)
+res_df28 <- res_df28 %>% 
+  mutate(fill=case_when(
+    padj.18<0.05 & stat.18<0 ~ "turquoise2",
+    padj.18<0.05 & stat.18>0 ~ "magenta1",
+    padj.22<0.05 & stat.22<0 ~ "blue2",
+    padj.22<0.05 & stat.22>0 ~ "red"
+  ))
+
+
+#Plot
+ggplot(res_df28, aes(x=log2FoldChange.18, y=log2FoldChange.22, color=fill))+
+  geom_point(alpha=0.8)+
+  scale_color_identity()+
+  geom_text(data=label_data, aes(x=xpos, y=ypos, label=count,color=fill))+
+  labs(x="log2FoldChange 28 vs. BASE at 18",
+       y="log2FoldChange 28 vs. BASE at 22",
+       title="How does response to 28C vary by dev temp?") +
+  theme_minimal()
+
+#Count the number of points per 
+color_counts <- res_df28 %>% 
+  group_by(fill) %>% 
+  summarise(count=n())
+
+label_positions <-data.frame(
+  fill = c("blue2","magenta2","red","turquoise2",
+           xpos=c(1,5,0,-7.5),
+           ypos=c(-5,0,9,3)))
+  
+label_data <- merge(color_counts, label_positions, by="fill")
+
+
+##################
+#
+# Make a scatter plot of responses to A33 when copepods develop at 18 vs 22
+#
+##################
+
+
+# contrast D18_A33 vs BASE
+res_D18_BASEvsA33 <- as.data.frame(results(dds, contrast=c("group","D18BASE","D18A33"), alpha=0.05))
+
+# Contrast D22_A33 vs BASE
+res_D22_BASEvsA33 <- as.data.frame(results(dds, contrast=c("group","D22BASE","D22A33"), alpha=0.05))
+
+# Merge these data frames
+res_df33 <- merge(res_D18_BASEvsA33, res_D22_BASEvsA33, by="row.names", suffixes=c(".18",".22"))
+
+rownames(res_df33) <- res_df33$Row.names
+
+# keep all rows get rid of first column
+res_df33 <- res_df33[,-1]
+
+library(dplyr)
+library(tidyr)
+
+# Define our color mapping logic with the mutate function (showing up and down regulated genes in each conditrin)
+res_df33 <- res_df33 %>% 
+  mutate(fill=case_when(
+    padj.18<0.05 & stat.18<0 ~ "turquoise2",
+    padj.18<0.05 & stat.18>0 ~ "magenta1",
+    padj.22<0.05 & stat.22<0 ~ "blue2",
+    padj.22<0.05 & stat.22>0 ~ "red"
+  ))
+
+
+#Plot
+ggplot(res_df33, aes(x=log2FoldChange.18, y=log2FoldChange.22, color=fill))+
+  geom_point(alpha=0.8)+
+  scale_color_identity()+
+  labs(x="log2FoldChange 33 vs. BASE at 18",
+       y="log2FoldChange 33 vs. BASE at 22",
+       title="How does response to 33C vary by dev temp?") +
+  theme_minimal()
