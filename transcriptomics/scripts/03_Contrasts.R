@@ -140,31 +140,34 @@ res_df28 <- res_df28 %>%
     padj.22<0.05 & stat.22>0 ~ "red"
   ))
 
+#Count the number of points per 
+color_counts1 <- res_df28 %>% 
+  group_by(fill) %>% 
+  summarise(count=n())
+
+label_positions1 <-data.frame(
+  fill = c("blue2","magenta2","red","turquoise2"),
+  x_pos=c(1,5,0,-7.5),
+  y_pos=c(-5,0,9,3))
+
+label_data1 <- merge(color_counts1, label_positions1, by="fill")
+
 
 #Plot
-ggplot(res_df28, aes(x=log2FoldChange.18, y=log2FoldChange.22, color=fill))+
+plot28 <- ggplot(res_df28, aes(x=log2FoldChange.18, y=log2FoldChange.22, color=fill))+
   geom_point(alpha=0.8)+
   scale_color_identity()+
-  geom_text(data=label_data, aes(x=xpos, y=ypos, label=count,color=fill))+
+  geom_text(data=label_data1, aes(x=x_pos, y=y_pos, label=count, color=fill), size=5)+
+  geom_abline(intercept=0, slope=1, linetype= "dashed", color="black")+
+  geom_abline(intercept=0, slope=-1, linetype= "dashed", color= "grey")+
+  xlim(-10,10)+ ylim(-10,10)+
   labs(x="log2FoldChange 28 vs. BASE at 18",
        y="log2FoldChange 28 vs. BASE at 22",
        title="How does response to 28C vary by dev temp?") +
   theme_minimal()
-
-#Count the number of points per 
-color_counts <- res_df28 %>% 
-  group_by(fill) %>% 
-  summarise(count=n())
-
-label_positions <-data.frame(
-  fill = c("blue2","magenta2","red","turquoise2",
-           xpos=c(1,5,0,-7.5),
-           ypos=c(-5,0,9,3)))
-  
-label_data <- merge(color_counts, label_positions, by="fill")
-
-
+plot28
 ##################
+
 #
 # Make a scatter plot of responses to A33 when copepods develop at 18 vs 22
 #
@@ -196,13 +199,37 @@ res_df33 <- res_df33 %>%
     padj.22<0.05 & stat.22<0 ~ "blue2",
     padj.22<0.05 & stat.22>0 ~ "red"
   ))
+#Count the number of points per 
+color_counts2 <- res_df33 %>% 
+  group_by(fill) %>% 
+  summarise(count=n())
+
+label_positions2 <-data.frame(
+  fill = c("blue2","magenta2","red","turquoise2"),
+  x_pos=c(1,5,0,-7.5),
+  y_pos=c(-5,0,9,3))
+
+label_data2 <- merge(color_counts2, label_positions2, by="fill")
+
+
 
 
 #Plot
-ggplot(res_df33, aes(x=log2FoldChange.18, y=log2FoldChange.22, color=fill))+
+plot33 <- ggplot(res_df33, aes(x=log2FoldChange.18, y=log2FoldChange.22, color=fill))+
   geom_point(alpha=0.8)+
   scale_color_identity()+
+  geom_text(data=label_data2, aes(x=x_pos, y=y_pos, label=count, color=fill, size=5))+
+  geom_abline(intercept=0, slope=1, linetype= "dashed", color="black")+
+  geom_abline(intercept=0, slope=-1, linetype= "dashed", color= "grey")+
+  xlim(-10,10)+ ylim(-10,10)+
   labs(x="log2FoldChange 33 vs. BASE at 18",
        y="log2FoldChange 33 vs. BASE at 22",
        title="How does response to 33C vary by dev temp?") +
   theme_minimal()
+
+library(gridExtra)
+
+# Put the two plots together in a two panel plot
+combined_plot <- grid.arrange(plot28, plot33, ncol=2)
+
+ggsave("~/Projects/eco_genomics/transcriptomics/figures/combined_scatter_plot.png", combined_plot, width=12, height=6)
