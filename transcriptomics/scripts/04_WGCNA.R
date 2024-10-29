@@ -110,6 +110,8 @@ a1 <- ggplot(sft.data, aes(Power, SFT.R.sq, label= Power))+
   theme_classic()
 
 a1
+# Scale free topology is a type of network, power is the strength of the correlation
+# We want to know how well certain powers fit a scale free topology
 
 a2<- ggplot(sft.data, aes(Power, mean.k., label= Power))+
   geom_point()+
@@ -120,4 +122,85 @@ a2<- ggplot(sft.data, aes(Power, mean.k., label= Power))+
 
 grid.arrange(a1, a2, nrow=2)
 
-# Choose a power of 24/26
+# Choose a power of 26
+# power is strength/weakness of correlation between genes
+# want to pick a power that has a more "biological topology" while not getting too low
+
+soft_power <- 26
+temp_cor <- cor
+cor <- WGCNA::cor
+
+# this sets the temp cor function to use WGCNA's correlation function
+
+norm.counts[] <- sapply(norm.counts, as.numeric)
+
+# The command below creates a network and identifies modules based on the parameters
+# that we chose
+bwnet26 <- blockwiseModules(norm.counts,
+                            maxBlockSize = 30000,
+                            TOMType = "signed",
+                            power = soft_power,
+                            mergeCutHeight = 0.25,
+                            numericLabels = FALSE,
+                            randomSeed = 1234,
+                            verbose=3) # TOMtype signed means only focus on positive correlations
+
+cor <- temp_cor # This resets the cor function to basse R's cor (instead of using WGCNA's)
+
+saveRDS(bwnet26, file = "outputs/bwnet26.rds")
+# To load the bwnet file in later, use:
+# bwnet26 <- readRDS("outputs/bwnet26.rds") #
+
+
+# STEP 5: Explore Module Eigengenes
+module_eigengenes <- bwnet26$MEs
+head(module_eigengenes)
+dim(module_eigengenes)
+
+# get the number of genes for each module using table function (each module is named for a color)
+table(bwnet$colors)
+
+# Plot the dendrogram and the module colors
+plotDendroAndColors(bwnet26$dendrograms[[1]], cbind(bwnet26$unmergedColors, bwnet26$colors),
+                    c("unmerged", "merged"),
+                    dendroLabels= FALSE,
+                    addGuide= TRUE,
+                    hang= 0.03,
+                    guidehang= 0.05)
+
+
+# STEP 6: Correlation of modules with traits
+# Define the numbers of genes and samples
+nSamples <- nrow(norm.counts)
+nGenes <- ncol(norm.counts)
+
+# Test for a correlation between module eigen genes and trait data
+module.trait.corr <- cor(module_eigengenes, traitData, use = "p")
+
+# Calculate p values for each correlation
+module.trait.corr.pvals <- corPvalueStudent(module.trait.corr, nSamples)
+
+# Visualise module trait association as a heatmap!
+heatmap.data <- merge(module_eigengenes, traitData, by = "row.names")
+head(heatmap.data)
+
+# address error of row.names not being numeric
+heatmap.data <- heatmap.data %>% 
+  column_to_rownames(var="Row.names")
+
+names(heatmap.data)
+
+# Make pretty heatmap of correlations
+CorLevelPlot(heatmap.data,
+             x= names(heatmap.data)[42:44], # these values may need to change based on 
+             y = names(heatmap.data) [1:41],   # number of eigengenes
+             col = c("blue2", "skyblue", "white", "pink", "red"))
+
+
+
+
+            
+
+
+
+
