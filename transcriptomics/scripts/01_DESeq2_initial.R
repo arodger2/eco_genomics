@@ -13,9 +13,9 @@ options(bitmapType = "cairo")
 setwd("~/Projects/eco_genomics/transcriptomics/")
 
 # Import counts matrix
-
 countsTable <- read.table("/gpfs1/cl/pbio3990/Transcriptomics/tonsa_counts.txt",
                           header=TRUE, row.names = 1)
+
 # DESeq2 doesn't like decimals but Salmon creates decimals
 countsTableRound <- round(countsTable)
 
