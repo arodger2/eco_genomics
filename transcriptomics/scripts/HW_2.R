@@ -84,7 +84,7 @@ res_D18_BASEvsA28 <- as.data.frame(results(dds, contrast=c("group","D18BASE","D1
 res_D18_BASEvsA33 <- as.data.frame(results(dds, contrast=c("group","D18BASE","D18A33"), alpha=0.05))
 res_df18 <- merge(res_D18_BASEvsA28, res_D18_BASEvsA33, by="row.names", suffixes=c(".28",".33"))
 rownames(res_df18) <- res_df18$Row.names
-res_df18 <- res_df18[,-1]
+
 
 # color code genes significant in both contrasts
 library(dplyr)
@@ -92,7 +92,7 @@ library(tidyverse)
 res_df18 <- res_df18 %>% 
   mutate(fill=case_when(
     padj.28<0.05 & stat.28<0 ~ "turquoise2",
-    padj.28<0.05 & stat.28>0 ~ "magenta1",
+    padj.28<0.05 & stat.28>0 ~ "magenta2",
     padj.33<0.05 & stat.33<0 ~ "blue2",
     padj.33<0.05 & stat.28>0 ~ "red"
   ))
@@ -112,8 +112,7 @@ label_data18 <- merge(color_counts18, label_positions18, by="fill")
 x_pos=c(1,5,0,-7.5)
 y_pos=c(-5,0,9,3)
 
-label_data1 <- merge(color_counts1, label_positions1, by="fill")
-#Pick up here!!
+label_data18 <- merge(color_counts18, label_positions18, by="fill")
 
 #Plot
 plot18 <- ggplot(res_df18, aes(x=log2FoldChange.28, y=log2FoldChange.33, color=fill))+
@@ -123,17 +122,87 @@ plot18 <- ggplot(res_df18, aes(x=log2FoldChange.28, y=log2FoldChange.33, color=f
   geom_abline(intercept=0, slope=1, linetype= "dashed", color="black")+
   geom_abline(intercept=0, slope=-1, linetype= "dashed", color= "grey")+
   xlim(-10,10)+ ylim(-10,10)+
-  labs(x="log2FoldChange 28 vs. BASE at 18",
-       y="log2FoldChange 28 vs. BASE at 22",
-       title="How does response to 28C vary by dev temp?") +
+  labs(x="log2Fold 28 vs Base",
+       y="log2Fold 33 vs Base",
+       title="Individuals developed at 18 response to 28 vs 33") +
   theme_minimal()
 plot18
 
-
-
-# scatter plot of log2fold
-
-
 # Part 2: 22_BASE versus 22_A28 and 22_BASE versus 22_A33
+res_D22_BASE_D22_A28 <- results(dds, contrast = c("group","D22BASE","D22A28"), alpha=0.05)
+
+res_D22_BASE_D22_A28 <- res_D22_BASE_D22_A28[!is.na(res_D22_BASE_D22_A28$padj),]
+
+res_D22_BASE_D22_A28 <- res_D22_BASE_D22_A28[order(res_D22_BASE_D22_A28$padj),]
+
+summary(res_D22_BASE_D22_A28)#274 upregulated, 15 downregulated
+
+res_D22_BASE_D22_A33 <- results(dds, contrast = c("group","D22BASE","D22A33"), alpha=0.05)
+
+res_D22_BASE_D22_A33 <- res_D22_BASE_D22_A33[!is.na(res_D22_BASE_D22_A33$padj),]
+
+res_D22_BASE_D22_A33 <- res_D22_BASE_D22_A33[order(res_D22_BASE_D22_A33$padj),]
+
+summary(res_D22_BASE_D22_A33) #1176 upregulated, 388 downregulated
+
+
+degs_D22_BASE_D22_A28 <- row.names(res_D22_BASE_D22_A28[res_D22_BASE_D22_A28$padj < 0.05,])
+degs_D22_BASE_D22_A33 <- row.names(res_D22_BASE_D22_A33[res_D22_BASE_D22_A33$padj < 0.05,])
+
+length(degs_D22_BASE_D22_A28)#289
+length(degs_D22_BASE_D22_A33)#1564
+length(intersect(degs_D22_BASE_D22_A28, degs_D22_BASE_D22_A33)) #144
+
+#unique to 28
+289-144 #145
+#unique to 33
+1564-144 #1420
 
 # Euler plot
+EulerD22 <-euler(c("A28"=145, "A33"=1420, "A28&A33"=144))
+plot(EulerD22, lty=1:3, quantities=TRUE, fill=c("steelblue","gold","seagreen"), 
+     alpha=0.4)
+
+# combine results matrices
+res_D22_BASEvsA28 <- as.data.frame(results(dds, contrast=c("group","D22BASE","D22A28"), alpha=0.05))
+res_D22_BASEvsA33 <- as.data.frame(results(dds, contrast=c("group","D22BASE","D22A33"), alpha=0.05))
+res_df22 <- merge(res_D22_BASEvsA28, res_D22_BASEvsA33, by="row.names", suffixes=c(".28",".33"))
+rownames(res_df22) <- res_df22$Row.names
+
+# color code genes significant in both contrasts
+library(dplyr)
+library(tidyverse)
+res_df22 <- res_df22 %>% 
+  mutate(fill=case_when(
+    padj.28<0.05 & stat.28<0 ~ "turquoise2",
+    padj.28<0.05 & stat.28>0 ~ "magenta2",
+    padj.33<0.05 & stat.33<0 ~ "blue2",
+    padj.33<0.05 & stat.28>0 ~ "red"
+  ))
+
+#Count the number of points per 
+color_counts22 <- res_df22 %>% 
+  group_by(fill) %>% 
+  summarise(count=n())
+
+label_positions22 <-data.frame(
+  fill = c("blue2","magenta2","red","turquoise2"),
+  x_pos=c(1,5,0,-7.5),
+  y_pos=c(-5,0,9,3))
+
+label_data22 <- merge(color_counts22, label_positions22, by="fill")
+
+#Plot
+plot22 <- ggplot(res_df22, aes(x=log2FoldChange.28, y=log2FoldChange.33, color=fill))+
+  geom_point(alpha=0.8)+
+  scale_color_identity()+
+  geom_text(data=label_data22, aes(x=x_pos, y=y_pos, label=count, color=fill), size=5)+
+  geom_abline(intercept=0, slope=1, linetype= "dashed", color="black")+
+  geom_abline(intercept=0, slope=-1, linetype= "dashed", color= "grey")+
+  xlim(-10,10)+ ylim(-10,10)+
+  labs(x="log2Fold 28 vs Base",
+       y="log2Fold 33 vs Base",
+       title="Individuals developed at 22 response to 28 vs 33") +
+  theme_minimal()
+plot22
+
