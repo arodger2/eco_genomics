@@ -94,8 +94,10 @@ res_df18 <- res_df18 %>%
     padj.28<0.05 & stat.28<0 ~ "turquoise2",
     padj.28<0.05 & stat.28>0 ~ "magenta2",
     padj.33<0.05 & stat.33<0 ~ "blue2",
-    padj.33<0.05 & stat.28>0 ~ "red"
+    padj.33<0.05 & stat.33>0 ~ "red"
   ))
+
+
 
 #Count the number of points per 
 color_counts18 <- res_df18 %>% 
@@ -177,7 +179,7 @@ res_df22 <- res_df22 %>%
     padj.28<0.05 & stat.28<0 ~ "turquoise2",
     padj.28<0.05 & stat.28>0 ~ "magenta2",
     padj.33<0.05 & stat.33<0 ~ "blue2",
-    padj.33<0.05 & stat.28>0 ~ "red"
+    padj.33<0.05 & stat.33>0 ~ "red"
   ))
 
 #Count the number of points per 
@@ -205,4 +207,5 @@ plot22 <- ggplot(res_df22, aes(x=log2FoldChange.28, y=log2FoldChange.33, color=f
        title="Individuals developed at 22 response to 28 vs 33") +
   theme_minimal()
 plot22
+
 
